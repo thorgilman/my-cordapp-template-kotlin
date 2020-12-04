@@ -24,7 +24,7 @@ class Initiator(val dataString: String, val destParty: Party) : FlowLogic<Signed
 
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
 
-        val command = Command(DataContract.Commands.Create(), listOf(ourIdentity, destParty).map { it.owningKey })
+        val command = Command(DataContract.Commands.Create(), listOf(ourIdentity).map { it.owningKey })
         val dataState = DataState("Data", ourIdentity, destParty)
         val stateAndContract = StateAndContract(dataState, DataContract.ID)
         val txBuilder = TransactionBuilder(notary).withItems(stateAndContract, command)
@@ -38,9 +38,10 @@ class Initiator(val dataString: String, val destParty: Party) : FlowLogic<Signed
 }
 
 @InitiatedBy(Initiator::class)
-class Responder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
+class Responder(val counterpartySession: FlowSession) : FlowLogic<SignedTransaction>() {
     @Suspendable
-    override fun call() {
-        // Responder flow logic goes here.
+    override fun call(): SignedTransaction {
+
+        return subFlow(ReceiveFinalityFlow(counterpartySession))
     }
 }

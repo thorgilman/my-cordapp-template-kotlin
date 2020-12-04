@@ -1,7 +1,13 @@
 package com.template
 
+import com.template.flows.Initiator
 import com.template.flows.Responder
+import com.template.states.DataState
+import net.corda.core.contracts.ContractState
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
+import net.corda.core.node.services.queryBy
+import net.corda.core.utilities.getOrThrow
 import net.corda.testing.core.internal.ContractJarTestUtils.makeTestJar
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkNotarySpec
@@ -38,6 +44,24 @@ class FlowTests {
     }
 
     @Test
-    fun `dummy test`() {
+    fun `test`() {
+        val future = a.startFlow(Initiator("Data", b.identity()))
+        mockNetwork.runNetwork()
+
+        val tx = future.getOrThrow()
+
+        assert(a.getStates<DataState>().size == 1)
+        assert(b.getStates<DataState>().size == 1)
     }
+
+
+    fun StartedMockNode.identity(): Party {
+        return this.info.legalIdentities[0]
+    }
+
+    inline fun <reified T: ContractState> StartedMockNode.getStates(): List<ContractState> {
+        return services.vaultService.queryBy<T>().states.map{it.state.data}
+    }
+
+
 }

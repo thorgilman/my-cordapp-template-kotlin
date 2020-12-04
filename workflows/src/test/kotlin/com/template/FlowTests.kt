@@ -39,6 +39,5 @@ class FlowTests {
 
     @Test
     fun `dummy test`() {
-
     }
 }

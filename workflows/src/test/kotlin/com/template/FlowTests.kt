@@ -4,9 +4,11 @@ import com.template.flows.Initiator
 import com.template.flows.Responder
 import com.template.states.DataState
 import net.corda.core.contracts.ContractState
+import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.core.internal.ContractJarTestUtils.makeTestJar
 import net.corda.testing.node.MockNetwork
@@ -45,10 +47,7 @@ class FlowTests {
 
     @Test
     fun `test`() {
-        val future = a.startFlow(Initiator("Data", b.identity()))
-        mockNetwork.runNetwork()
-
-        val tx = future.getOrThrow()
+        a.runFlow(Initiator("Data", b.identity()))
 
         assert(a.getStates<DataState>().size == 1)
         assert(b.getStates<DataState>().size == 1)
@@ -63,5 +62,10 @@ class FlowTests {
         return services.vaultService.queryBy<T>().states.map{it.state.data}
     }
 
+    fun StartedMockNode.runFlow(flowLogic: FlowLogic<SignedTransaction>): SignedTransaction {
+        val future = this.startFlow(flowLogic)
+        mockNetwork.runNetwork()
+        return future.getOrThrow()
+    }
 
 }

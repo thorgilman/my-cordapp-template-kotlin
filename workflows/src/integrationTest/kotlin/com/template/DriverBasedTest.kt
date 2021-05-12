@@ -1,32 +1,46 @@
 package com.template
 
+import com.template.flows.Initiator
+import com.template.states.DataState
+import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
+import net.corda.node.services.Permissions
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.driver.DriverDSL
 import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
+import net.corda.testing.node.User
 import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
 class DriverBasedTest {
-    private val bankA = TestIdentity(CordaX500Name("BankA", "", "GB"))
-    private val bankB = TestIdentity(CordaX500Name("BankB", "", "US"))
+    private val aX500Name = CordaX500Name("PartyA", "", "US")
+    private val bX500Name = CordaX500Name("PartyB", "", "US")
 
     @Test
     fun `node test`() = withDriver {
-        // Start a pair of nodes and wait for them both to be ready.
-        val (partyAHandle, partyBHandle) = startNodes(bankA, bankB)
 
-        // From each node, make an RPC call to retrieve another node's name from the network map, to verify that the
-        // nodes have started and can communicate.
+        val aProxy = setupNode(aX500Name)
+        val bProxy = setupNode(bX500Name)
 
-        // This is a very basic test: in practice tests would be starting flows, and verifying the states in the vault
-        // and other important metrics to ensure that your CorDapp is working as intended.
-        assertEquals(bankB.name, partyAHandle.resolveName(bankB.name))
-        assertEquals(bankA.name, partyBHandle.resolveName(bankA.name))
+        aProxy.startFlow(::Initiator, "Data", bProxy.nodeInfo().legalIdentities[0]).returnValue.toCompletableFuture().getOrThrow()
+
+        assertEquals(1, aProxy.vaultQuery(DataState::class.java).states.size)
+        assertEquals(1, bProxy.vaultQuery(DataState::class.java).states.size)
+    }
+
+    private fun DriverDSL.setupNode(x500Name: CordaX500Name): CordaRPCOps {
+        val username = x500Name.organisation
+        val user = User(username, "password", permissions = setOf("ALL"))
+        val handle = startNode(providedName=x500Name, rpcUsers= listOf(user)).getOrThrow()
+        val client = CordaRPCClient(handle.rpcAddress)
+        val proxy = client.start(username, "password").proxy
+        return proxy
     }
 
     // Runs a test inside the Driver DSL, which provides useful functions for starting nodes, etc.

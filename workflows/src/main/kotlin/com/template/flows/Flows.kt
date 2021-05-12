@@ -29,7 +29,7 @@ class Initiator(val dataString: String, val destParty: Party) : FlowLogic<Signed
         val stateAndContract = StateAndContract(dataState, DataContract.ID)
         val txBuilder = TransactionBuilder(notary).withItems(stateAndContract, command)
 
-        txBuilder.verify(serviceHub);
+        txBuilder.verify(serviceHub)
 
         val tx = serviceHub.signInitialTransaction(txBuilder)
         val targetSession = initiateFlow(destParty)

@@ -4,6 +4,7 @@ import com.template.flows.Initiator
 import com.template.states.DataState
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
@@ -33,6 +34,8 @@ class DriverBasedTest {
         assertEquals(1, aProxy.vaultQuery(DataState::class.java).states.size)
         assertEquals(1, bProxy.vaultQuery(DataState::class.java).states.size)
     }
+
+    private fun CordaRPCOps.identity(): Party = this.nodeInfo().legalIdentities[0]
 
     private fun DriverDSL.setupNode(x500Name: CordaX500Name): CordaRPCOps {
         val username = x500Name.organisation

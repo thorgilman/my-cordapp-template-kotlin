@@ -62,7 +62,7 @@ class FlowTests {
         return services.vaultService.queryBy<T>().states.map{it.state.data}
     }
 
-    fun StartedMockNode.runFlow(flowLogic: FlowLogic<SignedTransaction>): SignedTransaction {
+    inline fun <reified T> StartedMockNode.runFlow(flowLogic: FlowLogic<T>): T {
         val future = this.startFlow(flowLogic)
         mockNetwork.runNetwork()
         return future.getOrThrow()

@@ -58,7 +58,7 @@ class FlowTests {
         return this.info.legalIdentities[0]
     }
 
-    inline fun <reified T: ContractState> StartedMockNode.getStates(): List<ContractState> {
+    inline fun <reified T: ContractState> StartedMockNode.getStates(): List<T> {
         return services.vaultService.queryBy<T>().states.map{it.state.data}
     }
 
